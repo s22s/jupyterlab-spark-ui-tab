@@ -104,7 +104,6 @@ def load_jupyter_server_extension(nb_server_app):
         "%(levelname)s:  %(asctime)s - %(name)s - %(process)d - %(processName)s - \
         %(thread)d - %(threadName)s\n %(message)s \n")
     fh.setFormatter(formatter)
-    logger.addHandler(fh)  ## Comment this line to disable logging to a file.
 
     web_app = nb_server_app.web_app
     host_pattern = ".*$"
