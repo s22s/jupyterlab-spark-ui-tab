@@ -6,12 +6,12 @@ to the endpoint notebook_base_url/sparkmonitor
 
 TODO Create unique endpoints for different kernels or spark applications.
 """
-
+import json
 import os
 import re
 
 from bs4 import BeautifulSoup
-from notebook.base.handlers import IPythonHandler
+from notebook.base.handlers import IPythonHandler, APIHandler
 from notebook.utils import url_path_join
 from tornado import httpclient
 from tornado import web
@@ -34,6 +34,30 @@ PROXY_ATTRIBUTES = (
 PROXY_ROOT = "/sparkuitab"
 
 
+class SparkContextsHandler(APIHandler):
+    """Receive currently runing spark contexts"""
+
+    @web.authenticated
+    async def get(self):
+        monitors = await self.find_running_monitors()
+        self.finish(json.dumps(monitors))
+
+    async def find_running_monitors(self):
+        opened_ports = []
+        http = httpclient.AsyncHTTPClient()
+        base_url = os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1")
+        port = os.environ.get("SPARKMONITOR_UI_PORT", "4040")
+        port = int(port)
+        for i in range(port, port + 10):
+            url = "http://{}:{}".format(base_url, i)
+            try:
+                x = await http.fetch(url)
+                opened_ports.append(i)
+            except:
+                self.log.debug("Port {} is not opened".format(i))
+        return opened_ports
+
+
 class SparkMonitorHandler(IPythonHandler):
     """A custom tornado request handler to proxy Spark Web UI requests."""
 
@@ -44,24 +68,17 @@ class SparkMonitorHandler(IPythonHandler):
         Fetches the Spark Web UI from the configured ports
         """
         http = httpclient.AsyncHTTPClient()
-        baseurl = os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1")
+        base_url = os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1")
         port = os.environ.get("SPARKMONITOR_UI_PORT", "4040")
-        url = "http://" + baseurl + ":" + port
+        url = "http://" + base_url + ":" + port
         request_path = self.request.uri[(self.request.uri.index(PROXY_ROOT) + len(PROXY_ROOT) + 1):]
-        self.replace_path = self.request.uri[:self.request.uri.index(
+        replace_path = self.request.uri[:self.request.uri.index(
             PROXY_ROOT) + len(PROXY_ROOT)]
 
-        backendurl = url_path_join(url, request_path)
-        self.debug_url = url
-        self.backendurl = backendurl
-        self.log.info("GET: \n Request uri:%s \n Port: %s \n Host: %s \n request_path: %s ", self.request.uri,
-                    os.environ.get(
-                        "SPARKMONITOR_UI_PORT", "4040"), os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1"),
-                    request_path)
-
+        backend_url = url_path_join(url, request_path)
         try:
-            x = await http.fetch(backendurl)
-            self.handle_response(x)
+            x = await http.fetch(backend_url)
+            self.handle_response(x, replace_path)
         except:
             self.handle_bad_response()
 
@@ -74,17 +91,17 @@ class SparkMonitorHandler(IPythonHandler):
                 self.set_header("Content-Type", content_type)
                 self.write(content)
                 self.finish()
-            print("SPARKMONITOR_SERVER: Spark UI not running")
+            self.log.debug("SPARKMONITOR_SERVER: Spark UI not running")
         except FileNotFoundError:
-            self.log.info("default html file was not found")
+            self.log.warn("default html file was not found")
 
-    def handle_response(self, response):
+    def handle_response(self, response, replace_path):
         try:
             content_type = response.headers["Content-Type"]
             if "text/html" in content_type:
-                content = self.replace(response.body, self.replace_path)
+                content = self.replace(response.body, replace_path)
             elif "javascript" in content_type:
-                body = "location.origin +'" + self.replace_path + "' "
+                body = "location.origin +'" + replace_path + "' "
                 content = response.body.replace(b"location.origin", body.encode())
             else:
                 # Probably binary response, send it directly.
@@ -125,7 +142,8 @@ def load_jupyter_server_extension(nb_server_app):
     """
     web_app = nb_server_app.web_app
     base_url = web_app.settings["base_url"]
-    handlers = [(PROXY_ROOT + ".*", SparkMonitorHandler)]
+    handlers = [(PROXY_ROOT + ".*", SparkMonitorHandler),
+                ("spark_contexts", SparkContextsHandler)]
     handlers = [(url_path_join(base_url, x[0]), x[1]) for x in handlers]
     web_app.add_handlers(".*$", handlers)
 
