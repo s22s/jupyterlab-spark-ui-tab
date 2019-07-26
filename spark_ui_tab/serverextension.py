@@ -33,6 +33,9 @@ PROXY_ATTRIBUTES = (
 
 PROXY_ROOT = "/sparkuitab"
 
+spark_monitor_url = os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1")
+spark_monitor_port = os.environ.get("SPARKMONITOR_UI_PORT", "4040")
+
 
 class SparkContextsHandler(APIHandler):
     """Receive currently runing spark contexts"""
@@ -45,17 +48,15 @@ class SparkContextsHandler(APIHandler):
     async def find_running_monitors(self):
         opened_ports = []
         http = httpclient.AsyncHTTPClient()
-        base_url = os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1")
-        port = os.environ.get("SPARKMONITOR_UI_PORT", "4040")
-        port = int(port)
-        for i in range(port, port + 100):
-            url = "http://{}:{}/api/v1/applications".format(base_url, i)
+        port = int(spark_monitor_port)
+        for port_itr in range(port, port + 100):
+            url = "http://{}:{}/api/v1/applications".format(spark_monitor_url, port_itr)
             try:
                 response = await http.fetch(url)
                 response = json.loads(response.body)
-                opened_ports.append({i, response[0]["name"]})
+                opened_ports.append([port_itr, response[0]["name"]])
             except:
-                self.log.debug("Port {} is not opened".format(i))
+                self.log.debug("Port {} is not opened".format(port_itr))
         return opened_ports
 
 
@@ -69,13 +70,11 @@ class SparkMonitorHandler(IPythonHandler):
         Fetches the Spark Web UI from the configured ports
         """
         http = httpclient.AsyncHTTPClient()
-        base_url = os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1")
-        port = os.environ.get("SPARKMONITOR_UI_PORT", "4040")
-        url = "http://" + base_url + ":" + port
+        port = self.get_argument("port", spark_monitor_port, True)
+        self.log.info("SparkMonitorHandler.get - port: {}".format(port))
+        url = "http://{}:{}".format(spark_monitor_url, port)
         request_path = self.request.uri[(self.request.uri.index(PROXY_ROOT) + len(PROXY_ROOT) + 1):]
-        replace_path = self.request.uri[:self.request.uri.index(
-            PROXY_ROOT) + len(PROXY_ROOT)]
-
+        replace_path = self.request.uri[:self.request.uri.index(PROXY_ROOT) + len(PROXY_ROOT)]
         backend_url = url_path_join(url, request_path)
         try:
             x = await http.fetch(backend_url)
@@ -85,7 +84,6 @@ class SparkMonitorHandler(IPythonHandler):
 
     def handle_bad_response(self):
         content_type = "text/html"
-
         try:
             with open(os.path.join(os.path.dirname(__file__), "spark_not_found.html"), 'r') as f:
                 content = f.read()
