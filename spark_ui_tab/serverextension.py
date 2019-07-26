@@ -48,11 +48,12 @@ class SparkContextsHandler(APIHandler):
         base_url = os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1")
         port = os.environ.get("SPARKMONITOR_UI_PORT", "4040")
         port = int(port)
-        for i in range(port, port + 10):
-            url = "http://{}:{}".format(base_url, i)
+        for i in range(port, port + 100):
+            url = "http://{}:{}/api/v1/applications".format(base_url, i)
             try:
-                x = await http.fetch(url)
-                opened_ports.append(i)
+                response = await http.fetch(url)
+                response = json.loads(response.body)
+                opened_ports.append({i, response[0]["name"]})
             except:
                 self.log.debug("Port {} is not opened".format(i))
         return opened_ports
