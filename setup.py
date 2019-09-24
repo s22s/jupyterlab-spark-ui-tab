@@ -6,7 +6,7 @@ from subprocess import check_output
 
 
 setup(name='jupyterlab-spark-ui-tab',
-      version= check_output("git describe --tags".split()).decode("utf-8").strip(),
+      version= "0.0.1",
       description='Spark UI extension for jupyterlab',
       author='Lior Baber',
       author_email='liorbaber@gmail.com',

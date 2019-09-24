@@ -2,7 +2,7 @@ import {
     JupyterLab, JupyterLabPlugin
 } from '@jupyterlab/application';
 import {
-    ICommandPalette, IFrame,
+    ICommandPalette,
     MainAreaWidget,
 } from '@jupyterlab/apputils';
 
@@ -12,6 +12,7 @@ import {ReadonlyJSONObject} from '@phosphor/coreutils';
 import {toArray} from '@phosphor/algorithm';
 import {Menu} from '@phosphor/widgets'
 import {IMainMenu} from '@jupyterlab/mainmenu'
+import {SparkWidget} from "./sparkWidget";
 
 
 
@@ -33,23 +34,18 @@ namespace CommandIDs {
 function activate(app: JupyterLab, mainMenu: IMainMenu, palette: ICommandPalette): void {
     const {commands, shell} = app;
     console.log("in activate");
+    let widget: SparkWidget;
+
 
     commands.addCommand(CommandIDs.run, {
         label: 'Spark UI',
         execute: (args: ReadonlyJSONObject) => {
-
-
-            const sparkWidget = new SparkUI(app);
-
-            sparkWidget.title.label = 'Open Spark UI';
-
-            let main = new MainAreaWidget({content: sparkWidget});
-
+            widget = new SparkWidget();
+            widget.title.label = 'Open Spark UI';
+            let main = new MainAreaWidget({content: widget});
             // If there are any other widgets open, remove the launcher close icon.
             main.title.closable = !!toArray(shell.widgets('main')).length;
-
             shell.addToMainArea(main, {activate: args['activate'] as boolean});
-
             shell.layoutModified.connect(
                 () => {
                     // If there is only a launcher open, remove the close icon.
@@ -57,7 +53,6 @@ function activate(app: JupyterLab, mainMenu: IMainMenu, palette: ICommandPalette
                 },
                 main
             );
-
             return main;
         }
 
@@ -74,18 +69,6 @@ export function createMenu(app: JupyterLab): Menu {
     menu.title.label = 'Spark';
     menu.addItem({command: CommandIDs.run});
     return menu;
-}
-
-class SparkUI extends IFrame {
-    html:string;
-    constructor(app: JupyterLab) {
-        super();
-        this.url = app.info.urls.base + 'sparkuitab/';
-    }
-
-
-
-
 }
 
 
