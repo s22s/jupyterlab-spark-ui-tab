@@ -10,21 +10,27 @@ export class SparkWidget extends Widget {
     this.title.label = 'Spark UI';
     this.title.closable = true;
     this.addClass("spark-ui-widget");
-    this.listRepositories();
+    this.renderApplicationsSelect();
   }
 
-  private listRepositories() {
+  private renderApplicationsSelect() {
+    let serverSettings = ServerConnection.makeSettings();
     let header = document.createElement("h2");
     header.innerText = "Spark applications";
     let applicationSelect = document.createElement("select");
     applicationSelect.className = "spark-app-select";
-    var opt = document.createElement("option");
-    opt.value = "1";
-    opt.text = "Option: Value 2";
-    applicationSelect.add(opt);
+    let sparkUIArea = document.createElement("iframe");
+    sparkUIArea.className = "spark-ui-area";
+    sparkUIArea.src = URLExt.join(serverSettings.baseUrl, "sparkuitab");
+    applicationSelect.addEventListener("change", function (event) {
+      console.log("selected value: " + applicationSelect.value);
+      sparkUIArea.src = URLExt.join(serverSettings.baseUrl, "sparkuitab") + "?port=" + applicationSelect.value;
+    });
+
 
     this.node.appendChild(header);
     this.node.appendChild(applicationSelect);
+    this.node.appendChild(sparkUIArea);
     let contextPromise = SparkWidget.getRequest("spark_contexts");
     contextPromise.then(response => {
       response.json().then((ports: any) => {
@@ -32,8 +38,8 @@ export class SparkWidget extends Widget {
         ports.forEach((port: any) => {
           console.log("adding option: " + port)
           let opt = document.createElement("option");
-          opt.value = port;
-          opt.text = port;
+          opt.value = port[0];
+          opt.text = port[1];
           applicationSelect.add(opt);
         });
       })
