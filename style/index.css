@@ -1,4 +1,13 @@
 .spark-ui-area{
     height: 100%;
     width: 100%;
+    border: none;
+}
+
+.spark-app-select{
+    margin: 10px;
+}
+
+.spark-select-label{
+    margin-left: 20px;
 }

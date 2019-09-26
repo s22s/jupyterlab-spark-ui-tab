@@ -6,7 +6,7 @@ import {ReadonlyJSONObject} from '@phosphor/coreutils';
 import {toArray} from '@phosphor/algorithm';
 import {Menu} from '@phosphor/widgets'
 import {IMainMenu} from '@jupyterlab/mainmenu'
-import {SparkWidget} from "./sparkWidget";
+import {SparkUIWidget} from "./sparkUIWidget";
 
 
 /**
@@ -26,14 +26,13 @@ namespace CommandIDs {
 
 function activate(app: JupyterLab, mainMenu: IMainMenu, palette: ICommandPalette): void {
   const {commands, shell} = app;
-  console.log("in activate");
-  let widget: SparkWidget;
+  let widget: SparkUIWidget;
 
 
   commands.addCommand(CommandIDs.run, {
     label: 'Spark UI',
     execute: (args: ReadonlyJSONObject) => {
-      widget = new SparkWidget();
+      widget = new SparkUIWidget();
       widget.title.label = 'Open Spark UI';
       let main = new MainAreaWidget({content: widget});
       // If there are any other widgets open, remove the launcher close icon.

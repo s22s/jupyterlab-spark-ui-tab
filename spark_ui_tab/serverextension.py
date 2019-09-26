@@ -9,6 +9,8 @@ TODO Create unique endpoints for different kernels or spark applications.
 import json
 import os
 import re
+import urllib
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from notebook.base.handlers import IPythonHandler, APIHandler
@@ -35,10 +37,11 @@ PROXY_ROOT = "/sparkuitab"
 
 spark_monitor_url = os.environ.get("SPARKMONITOR_UI_HOST", "127.0.0.1")
 spark_monitor_port = os.environ.get("SPARKMONITOR_UI_PORT", "4040")
+spark_monitor_protocol = os.environ.get("SPARKMONITOR_UI_PROTOCOL", "http")
 
 
 class SparkContextsHandler(APIHandler):
-    """Receive currently runing spark contexts"""
+    """Receive currently running spark contexts"""
 
     @web.authenticated
     async def get(self):
@@ -50,7 +53,7 @@ class SparkContextsHandler(APIHandler):
         http = httpclient.AsyncHTTPClient()
         port = int(spark_monitor_port)
         for port_itr in range(port, port + 100):
-            url = "http://{}:{}/api/v1/applications".format(spark_monitor_url, port_itr)
+            url = "{}://{}:{}/api/v1/applications".format(spark_monitor_protocol, spark_monitor_url, port_itr)
             try:
                 response = await http.fetch(url)
                 response = json.loads(response.body)
@@ -72,13 +75,14 @@ class SparkMonitorHandler(IPythonHandler):
         http = httpclient.AsyncHTTPClient()
         port = self.get_argument("port", spark_monitor_port, True)
         self.log.info("SparkMonitorHandler.get - port: {}".format(port))
-        url = "http://{}:{}".format(spark_monitor_url, port)
+        url = "{}://{}:{}".format(spark_monitor_protocol, spark_monitor_url, port)
         request_path = self.request.uri[(self.request.uri.index(PROXY_ROOT) + len(PROXY_ROOT) + 1):]
         replace_path = self.request.uri[:self.request.uri.index(PROXY_ROOT) + len(PROXY_ROOT)]
+        self.log.info("SparkMonitorHandler.get - replace_path: {}".format(replace_path))
         backend_url = url_path_join(url, request_path)
         try:
             x = await http.fetch(backend_url)
-            self.handle_response(x, replace_path)
+            self.handle_response(x, replace_path, port)
         except:
             self.handle_bad_response()
 
@@ -94,11 +98,11 @@ class SparkMonitorHandler(IPythonHandler):
         except FileNotFoundError:
             self.log.warn("default html file was not found")
 
-    def handle_response(self, response, replace_path):
+    def handle_response(self, response, replace_path, port):
         try:
             content_type = response.headers["Content-Type"]
             if "text/html" in content_type:
-                content = self.replace(response.body, replace_path)
+                content = self.replace(response.body, replace_path, port)
             elif "javascript" in content_type:
                 body = "location.origin +'" + replace_path + "' "
                 content = response.body.replace(b"location.origin", body.encode())
@@ -112,7 +116,7 @@ class SparkMonitorHandler(IPythonHandler):
             self.log.error(str(e))
             raise e
 
-    def replace(self, content, root_url):
+    def replace(self, content, root_url, port):
         """Replace all the links with our prefixed handler links,
 
          e.g.:
@@ -128,8 +132,17 @@ class SparkMonitorHandler(IPythonHandler):
                 match = PROXY_PATH_RE.match(value)
                 if match is not None:
                     value = match.groups()[0]
-                tag[attribute] = url_path_join(root_url, value)
+                new_url = url_path_join(root_url, value)
+                tag[attribute] = self.add_parameter(new_url, {'port': port})
         return str(soup)
+
+    def add_parameter(self, url, params):
+        params = urllib.parse.urlencode(params)
+
+        if urllib.parse.urlparse(url).query:
+            return url + '&' + params
+        else:
+            return url + '?' + params
 
 
 def load_jupyter_server_extension(nb_server_app):
