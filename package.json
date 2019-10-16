@@ -23,9 +23,6 @@
     "type": "git",
     "url": "https://github.com/s22s/jupyterlab-spark-ui-tab"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf lib",
