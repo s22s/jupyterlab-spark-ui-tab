@@ -1,18 +1,18 @@
 {
-  "name": "@liorbaber/jupyterlab-spark-ui-tab",
-  "version": "0.0.8",
-  "description": "jupyterlab extension to have spark-ui avi;able as a tab",
+  "name": "@s22s/jupyterlab-spark-ui-tab",
+  "version": "0.0.9",
+  "description": "jupyterlab extension to have spark-ui available as a tab",
   "keywords": [
     "jupyter",
     "jupyterlab",
     "jupyterlab-extension"
   ],
-  "homepage": "https://github.com/Liorba/spark-ui-tab/",
+  "homepage": "https://github.com/s22s/jupyterlab-spark-ui-tab",
   "bugs": {
-    "url": "https://github.com/Liorba/spark-ui-tab/issues"
+    "url": "https://github.com/s22s/jupyterlab-spark-ui-tab/issues"
   },
-  "license": "apache-2.0",
-  "author": "lior baber",
+  "license": "Apache-2.0",
+  "author": "Lior Baber",
   "files": [
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
     "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}"
@@ -21,7 +21,10 @@
   "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Liorba/jupyterlab-spark-ui-tab"
+    "url": "https://github.com/s22s/jupyterlab-spark-ui-tab"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   },
   "scripts": {
     "build": "tsc",
