@@ -1,6 +1,7 @@
-import {Widget} from '@phosphor/widgets'
+import {Widget} from '@lumino/widgets'
 import {ServerConnection} from '@jupyterlab/services';
 import {URLExt} from '@jupyterlab/coreutils';
+import { refreshIcon } from '@jupyterlab/ui-components';
 
 /**
  * This widget display spark web ui console.
@@ -33,9 +34,13 @@ export class SparkUIWidget extends Widget {
     });
     // Html button for refreshing application list.
     let refreshButton = document.createElement("button");
-    refreshButton.className = "refresh-applications-button"
+    refreshButton.className = "spark-ui-refresh-applications-button"
     let buttonIcon = document.createElement("span");
-    buttonIcon.className = "jp-RefreshIcon jp-Icon jp-Icon-16 jp-ToolbarButtonComponent-icon"
+    refreshIcon.element({
+      container: buttonIcon,
+      height: "1em",
+      width: "1em"
+    });
     refreshButton.appendChild(buttonIcon);
     let _this = this;
     refreshButton.addEventListener("click", function clickEvn () {

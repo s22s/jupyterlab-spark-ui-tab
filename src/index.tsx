@@ -2,9 +2,9 @@ import {ILabShell, JupyterFrontEnd, JupyterFrontEndPlugin} from '@jupyterlab/app
 import {ICommandPalette, MainAreaWidget,} from '@jupyterlab/apputils';
 // import * as React from 'react';
 import '../style/index.css';
-import {ReadonlyJSONObject} from '@phosphor/coreutils';
-import {toArray} from '@phosphor/algorithm';
-import {Menu} from '@phosphor/widgets'
+import {ReadonlyJSONObject} from '@lumino/coreutils';
+import {toArray} from '@lumino/algorithm';
+import {Menu} from '@lumino/widgets'
 import {IMainMenu} from '@jupyterlab/mainmenu'
 import {SparkUIWidget} from "./sparkUIWidget";
 

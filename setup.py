@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from subprocess import check_output
 
 setup(name='jupyterlab-spark-ui-tab',
-      version="0.0.2",
+      version="0.1.0",
       description='Spark UI extension for JupyterLab',
       author='Lior Baber',
       author_email='liorbaber@gmail.com',
